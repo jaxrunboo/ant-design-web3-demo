@@ -1,0 +1,13 @@
+EIP1193 
+定义了浏览器如何通过js和钱包进行交互
+有了这个规范，钱包才可以按照这个规范提供接口，dapp才能按照它调用钱包提供的接口
+核心逻辑是：
+约定了浏览器运行时的全局对象window上ethereum对象的格式，定义了一下方法和事件
+缺陷在于，如果用户安装了多个钱包，多个钱包之间会抢占window.ethereum对象，损害用户体验。比如rainbow和metamask
+大部分钱包的做法是会注入自己独特的对象，比如tokenPocket会注入window.tokenPocket
+这样的做法会需要dapp开发者适配多钱包，增加dapp的开发成本，对开发者来讲是不友好的
+
+EIP6963
+不再通过window.ethereum和钱包交互，而是通过往window发送事件的方式。
+核心逻辑是：
+通过浏览器的window.addEventListener来监听消息，通过window.dispatchEvent来发送消息。所有的消息type都有eip6963前缀

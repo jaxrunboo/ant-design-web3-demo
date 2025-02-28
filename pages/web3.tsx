@@ -1,11 +1,50 @@
 import { parseEther } from "viem";
+import { mainnet, sepolia, polygon } from "wagmi/chains";
 import { Button, message } from "antd";
-import { http, useReadContract, useWriteContract } from "wagmi";
-import { Mainnet, WagmiWeb3ConfigProvider, MetaMask, Sepolia } from '@ant-design/web3-wagmi';
-import { Address, NFTCard, ConnectButton, Connector, useAccount } from "@ant-design/web3";
+import { createConfig, http, useReadContract, useWriteContract } from "wagmi";
+import { Mainnet, WagmiWeb3ConfigProvider, MetaMask, Sepolia, WalletConnect, Polygon } from '@ant-design/web3-wagmi';
+import { Address, NFTCard, ConnectButton, Connector, useAccount, useProvider } from "@ant-design/web3";
+import { injected, walletConnect } from "wagmi/connectors";
+
+const config = createConfig({
+    chains: [mainnet, sepolia, polygon],
+    transports: {
+        [mainnet.id]: http(),
+        [sepolia.id]: http(),
+        [polygon.id]: http(),
+    },
+    connectors: [
+        injected({
+            target: "metaMask"
+        }),
+        walletConnect({
+            projectId: 'c07c0051c2055890eade3556618e38a6',
+            showQrModal: false,
+        })
+    ]
+});
+
+const contractInfo = [
+    {
+        id: 1,
+        name: 'Ethereum',
+        contractAddress: '0xEcd0D12E21805803f70de03B72B1C162dB0898d9',
+    },
+    {
+        id: 5,
+        name: 'Sepolia',
+        contractAddress: '0x418325c3979b7f8a17678ec2463a74355bdbe72c',
+    },
+    {
+        id: 137,
+        name: 'Polygon',
+        contractAddress: '0x418325c3979b7f8a17678ec2463a74355bdbe72c',
+    },
+];
 
 const CallTest = () => {
     const { account } = useAccount();//获取当前账户
+    const { chain } = useProvider();
     const result = useReadContract({
         abi: [
             {
@@ -16,7 +55,9 @@ const CallTest = () => {
                 outputs: [{ type: 'uint256' }],
             }
         ],
-        address: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',//nft合约地址
+        //nft合约地址
+        address: contractInfo.find(item => item.id === chain?.id)?.contractAddress as `0x${string}`,
+        //'0x933C4C786DC16B9858D37c2DDE993df98f1Eecc4',
         functionName: 'balanceOf',
         args: [account?.address as `0x${string}`],
     });
@@ -37,10 +78,10 @@ const CallTest = () => {
                         //internalType solidity源码中的数据类型，type是abi json中的数据类型
                         outputs: [],
                     }],
-                    address: '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d',
+                    address: contractInfo.find((item) => item.id === chain?.id)?.contractAddress as `0x${string}`,
                     functionName: 'mint',
                     args: [BigInt(1)],
-                    value: parseEther('0.001'),
+                    value: parseEther('0.01'),
                 },
                     {
                         onSuccess: () => {
@@ -53,16 +94,17 @@ const CallTest = () => {
             }}>mint</Button>
         </div>
     );
-}
+};
 
 export default function Web3() {
     return (
         <WagmiWeb3ConfigProvider
-            chains={[Mainnet]}
-            transports={{
-                [Mainnet.id]: http('https://api.zan.top/node/v1/eth/mainnet/3d362260a7b84139bc4ccb38280b2f38')
+            config={config}
+            chains={[Sepolia, Polygon]}
+            wallets={[MetaMask(), WalletConnect()]}
+            eip6963={{
+                autoAddInjectedWallets: true
             }}
-            wallets={[MetaMask()]}
         >
             <Address format address="0xEcd0D12E21805803f70de03B72B1C162dB0898d9" />
             <NFTCard address="0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d" tokenId={1} />
